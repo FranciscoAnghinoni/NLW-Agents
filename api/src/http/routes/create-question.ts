@@ -1,37 +1,37 @@
-import type { FastifyPluginCallbackZod } from "fastify-type-provider-zod";
-import { db } from "../../db/connection.ts";
-import { schema } from "../../db/schemas/index.ts";
-import { z } from "zod/v4";
+import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod'
+import { z } from 'zod/v4'
+import { db } from '../../db/connection.ts'
+import { schema } from '../../db/schemas/index.ts'
 
 export const createQuestionRoute: FastifyPluginCallbackZod = (app) => {
   app.post(
-    "/rooms",
+    '/rooms/:roomId/questions',
     {
       schema: {
+        params: z.object({
+          roomId: z.string(),
+        }),
         body: z.object({
-          name: z.string().min(1),
-          description: z.string().optional(),
+          question: z.string().min(1),
         }),
       },
     },
     async (request, reply) => {
-      const { name, description } = request.body;
+      const { roomId } = request.params
+      const { question } = request.body
 
-      const room = await db
-        .insert(schema.rooms)
-        .values({
-          name,
-          description,
-        })
-        .returning();
+      const result = await db
+        .insert(schema.questions)
+        .values({ roomId, question })
+        .returning()
 
-      const insertedRoom = room[0];
+      const insertedQuestion = result[0]
 
-      if (!insertedRoom) {
-        throw new Error("Failed to create room");
+      if (!insertedQuestion) {
+        throw new Error('Failed to create new room.')
       }
 
-      return reply.status(201).send({ roomId: insertedRoom.id });
+      return reply.status(201).send({ questionId: insertedQuestion.id })
     }
-  );
-};
+  )
+}
